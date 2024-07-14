@@ -1,8 +1,8 @@
 #include "LogisticRegression.h"
 
 // Constructor to initialize the LogisticRegression object with features, targets, and dimensions
-LogisticRegression::LogisticRegression(const std::vector<std::vector<float>>& features, const std::vector<bool>& targets, const int& numOfFeatures, const int& numOfDataPoints)
-	: features(features), targets(targets), numOfFeatures(numOfFeatures), numOfDataPoints(numOfDataPoints), coefficients(numOfFeatures, 0), intercept(0)
+LogisticRegression::LogisticRegression(const std::vector<std::vector<float>>& features, const std::vector<bool>& targets, const int& numOfFeatures, const int& numOfDataPoints, const float& regularizationParam)
+	: features(features), targets(targets), numOfFeatures(numOfFeatures), numOfDataPoints(numOfDataPoints), coefficients(numOfFeatures, 0), intercept(0), regularizationParam(regularizationParam)
 {
 	Scale(); // Apply feature scaling upon initialization
 }
@@ -45,7 +45,7 @@ float LogisticRegression::Predict(std::vector<float> input, const bool test) con
 	return result;
 }
 
-// Calculate the Maximum Likelihood Estimation (MLE) loss
+// Calculate the Maximum Likelihood Estimation (MLE) loss with L2 regularization
 float LogisticRegression::Loss() const
 {
 	float result = 0;
@@ -56,6 +56,13 @@ float LogisticRegression::Loss() const
 	}
 
 	result /= -1.*numOfDataPoints;
+	
+	float sum = 0;
+	for (int i = 0; i < numOfFeatures; i++) {
+		sum += coefficients[i] * coefficients[i];
+	}
+	
+	result += sum * regularizationParam / (2 * numOfDataPoints);
 
 	return result;
 }
@@ -66,7 +73,7 @@ std::vector<float> LogisticRegression::CoeffGradient() const
 	std::vector<float> result(numOfFeatures);
 
 	for (int i = 0; i < numOfFeatures; i++) {
-		float sum = 0;
+		float sum = regularizationParam * coefficients[i];
 		for (int j = 0; j < numOfDataPoints; j++) {
 			sum += (Predict(features[j]) - targets[j]) * features[j][i];
 		}
